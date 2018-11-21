@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+  <html>
+  <head>
+    <meta name="viewport" content="text/html; charset=utf-8"
+  http-equiv="content-type">
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  <!-- Optional theme -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+  <!-- Latest compiled and minified JavaScript -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  {% block scripts %}
+  {% endblock %}
+  <title>{{ title }}</title>
+  </head>
+   <body>
+    <h4><a href="{{url_for('root')}}">Revenir à la base</a></h4>
+      {% block back %}
+      {% endblock %}
+      {% block main %}
+      <h1>Aller vers...</h1>
+      {% endblock %}
+      {% block content %}
+      <ul>
+        {% for link in links %}
+        <li><h3><a href={{link[1]}}>{{link[0]}}</a></li></h3>
+        {% endfor %}
+      </ul>
+      {% endblock %}
+   </body>
+</html>

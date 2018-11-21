@@ -1,0 +1,9 @@
+{% extends "genes.html" %}
+	{% block back %}
+	  <h4><a href=" {{ url_for('genes') }}">Revenir à la liste de gènes</a></h4>
+	{% endblock %}
+  {% block main %} 
+    <h1>Le gène {{iD}} a bien été supprimé :'(</h1>
+  {% endblock %}
+  {% block content %}
+  {% endblock %}

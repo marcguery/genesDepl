@@ -1,0 +1,16 @@
+{% extends "genes.html" %}
+  {% block back %}
+    <h4><a href=" {{ url_for('genes') }}">Revenir à la liste de gènes</a></h4>
+  {% endblock %}
+  {% block main %}
+    <h1>Formulaire de modification du gène {{iD}}</h1>
+    {% endblock %}
+  {% block content %}
+  <form action="{{ url_for('geneedit', iD=iD) }}" method="post">
+  	{% for col in cols %}
+  	{{col}} : <br>
+  	<input type="text" name={{col}} value={{default[loop.index-1]}}><br>
+  	{% endfor %}
+  	<input type="button" onClick="confSubmit(this.form);" name=1 value="Envoyer" />
+  </form>
+  {% endblock %}

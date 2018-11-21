@@ -1,0 +1,31 @@
+{% extends "trans.html" %}
+  {% block back %}
+    <h4><a href=" {{ url_for('trans') }} ">Revenir à la liste de transcrits</a></h4>
+  {% endblock %}
+    {% block main %}
+      <h1>Informations du transcrit {{iD}}</h1>
+      {% endblock %}
+    {% block content %}
+      <div class="table-responsive">
+        <table class="table table-dark">
+          <thead>
+            <tr>
+              {% for name in tnames %}
+              <th class='text-center'>{{name}}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+          	<tr>
+            {% for info in infos %}
+              {% if loop.index==2 %}
+                <td class='text-center'><a href="{{url_for('geneview', iD=info)}}">{{info}}</a></td>
+              {% else %}
+                <td class='text-center'>{{info}}</td>
+              {% endif %}
+          {% endfor %}
+          </tr>
+          </tbody>
+        </table>
+      </div>
+      {% endblock %}

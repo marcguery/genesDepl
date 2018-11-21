@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+  {% block main %}
+  	{% for mes in mess %}
+  		{% if loop.index == 1%}
+  			<h1>{{mes}}</h1>
+  		{% else %}
+  			<h3>{{mes}}</h3>
+  		{% endif %}
+  	{% endfor %}
+    {% endblock %}

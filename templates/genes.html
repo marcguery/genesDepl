@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+      {% block scripts %}
+      <script type="text/javascript">
+
+      function confSubmit(form) {
+      if (confirm("Êtes-vous sûr ?")) {
+      form.submit();
+      }
+
+      else {
+      alert("Annulé !");
+      }
+      }
+      </script>
+      {% endblock %}
+      {% block main %}
+      <h1>Liste des 1000 premiers gènes</h1>
+      {% endblock %}
+
+      {% block content %}
+      <h3><a href="{{ url_for('genenew') }}">Ajouter un gène</a></h3>
+      <div class="table-responsive">
+        <table class="table table-dark">
+          <thead>
+            <tr>
+              <th scope="col" class='text-center'></th>
+              <th class='text-center'>ID</th>
+              <th class='text-center'>Nom</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for gene in genes %}
+          <tr>
+            <td scope="row" class='text-center'>{{loop.index}}</td>
+            <td class='text-center'><a href = "{{ url_for('geneview', iD=gene[0]) }}">{{gene[0]}}</a></td>
+            <td class='text-center'>{{gene[1]}}</td>
+            <td class='text-right'>
+              <form action="{{ url_for('geneedit', iD=gene[0]) }}" method="get">
+                <input type="button" onClick="confSubmit(this.form);" name={{gene[0]}} value="Modifier" />
+              </form>
+            </td>
+            <td class='text-left'>
+              <form action="{{ url_for('genedel', iD=gene[0]) }}" method="post">
+                <input type="button" onClick="confSubmit(this.form);" name={{gene[0]}} value="Supprimer" />
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endblock %}
+

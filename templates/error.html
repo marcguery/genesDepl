@@ -2,9 +2,9 @@
   {% block main %}
   	{% for mes in mess %}
   		{% if loop.index == 1%}
-  			<h1>{{mes}}</h1>
+  			<h1>{{mess[mes]}}</h1>
   		{% else %}
-  			<h3>{{mes}}</h3>
+  			<h3>{{mess[mes]}}</h3>
   		{% endif %}
   	{% endfor %}
     {% endblock %}

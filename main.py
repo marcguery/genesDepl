@@ -154,8 +154,13 @@ def close_connection(exception):
 def root():
 	l1=("Liste des gènes", url_for('genes'))
 	l2=("Liste des transcrits", url_for('trans'))
-	links = [l1,l2]
+	l3=("Doom", url_for('doom'))
+	links = [l1,l2,l3]
 	return render_template("base.html", links=links, title="Bienvenue")
+
+@app.route("/Doom")
+def doom():
+	return render_template("doom.html", title="DOOM")
 
 @app.route("/Genes", methods=['GET', 'POST'])
 def genes():

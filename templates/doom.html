@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block scripts %}
+<script src="https://js-dos.com/cdn/js-dos-api.js"></script>
+{% endblock %}
+{% block main %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/lib/doom.css') }}">
+
+    <div id="dosbox"></div>
+    <br/>
+    <button onclick="dosbox.requestFullScreen();">Make fullscreen</button><br>
+<p>Cliquez sur l'écran, appuyez sur entrée<br>
+  Flèches directionnelles, espace, Ctrl<br><a href="http://doom.wikia.com/wiki/Controls" target=_b>Plus de commandes</a></p>
+<script src="{{ url_for('static', filename='js/lib/doom.js') }}"></script>
+{% endblock %}

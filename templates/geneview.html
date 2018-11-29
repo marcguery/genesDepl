@@ -41,9 +41,11 @@
           <tbody>
             {% for tran in trans %}
               <tr>
-                <td class='text-center'><a href="{{url_for('transview', iD=tran[0])}}">{{tran[0]}}</a></td>
-                {% for info in tran[1:] %}
-                <td class='text-center'>{{info}}</td>
+                <td class='text-center'><a href="{{url_for('transview', iD=tran[tnames[0]])}}">{{tran[tnames[0]]}}</a></td>
+                {% for info in tran %}
+                  {% if loop.index > 1 %}
+                    <td class='text-center'>{{tran[info]}}</td>
+                  {% endif %}
           	    {% endfor %}
           	  </tr>
           	{% endfor %}

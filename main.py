@@ -70,6 +70,17 @@ def viewGene(iD):
 		trans = [{}] if infos == [] else [dict(zip(cols, row)) for row in infos]
 		return [1, {"gene" : gene, "trans" : trans}]
 
+def isGeneinBase(giD, iDs):
+	if giD in iDs:
+		mess=error(e1="Le gène existe déjà.")
+		status = 403
+		return [1, {"error" : mess, "status" : status}]
+	else:
+		mess=error(e1="Le gène n'existe pas.")
+		status = 403
+		return [0, {"error" : mess, "status" : status}]
+
+
 def verifGene(dictCont):
 	try:
 		int(dictCont["Strand"])
@@ -113,10 +124,11 @@ def createGene(form):
 	verif = verifGene(dicinfos)
 	allnames=allGenes()[1]
 	iDs = map(lambda x : x[0], allnames)
-	if dicinfos["Ensembl_Gene_ID"] in iDs:
-		mess=error(e1="Le gène existe déjà.")
-		status = 403
-		return [0, {"error" : mess, "status" : status}]
+	inBase = isGeneinBase(dicinfos["Ensembl_Gene_ID"], iDs)
+	if not inBase[0]:
+		pass
+	else:
+		return [0, inBase[1]]
 	if verif[0]:
 		cursor = get_db().cursor()
 		queryIns = "INSERT INTO Genes (%s) VALUES (%s)" % (', '.join([*dicinfos.keys()]), 
@@ -125,7 +137,7 @@ def createGene(form):
 		get_db().commit()
 		return [1, dicinfos]
 	else:
-		return verif
+		return [0, verif[1]]
 
 def editGene(form, iD):
 	dicinfos = form
@@ -141,7 +153,22 @@ def editGene(form, iD):
 		mess=("Le gène %s a bien été modifié !" % iD)
 		return [1, {"mess" : mess}]
 	else:
-		return verif
+		return [0, verif[1]]
+
+def delGene(iD):
+	allnames=allGenes()[1]
+	iDs = map(lambda x : x[0], allnames)
+	inBase = isGeneinBase(iD, iDs)
+	if inBase[0]:
+		pass
+	else:
+		return [0, inBase[1]]
+	cursor = get_db().cursor()
+	queryDel = ("DELETE FROM Genes WHERE Ensembl_Gene_ID = '%s' ;" % iD)
+	cursor.execute(queryDel)
+	get_db().commit() #PERMANENT REMOVAL
+	return [1, {}]
+
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -190,12 +217,13 @@ def geneview(iD):
 def genedel(iD):
 	with app.app_context():
 		if request.method=="POST":
-			cursor = get_db().cursor()
-			queryDel = ("DELETE FROM Genes WHERE Ensembl_Gene_ID = '%s' ;" % iD)
-			cursor.execute(queryDel)
-			get_db().commit() #PERMANENT REMOVAL
-			back=url_for('genes')
-			return render_template("del.html", iD=iD, back=back, title="Genes")
+			delState = delGene(iD)
+			if delState[0]:
+				return render_template("del.html", iD=iD, title="Genes")
+			else:
+				mess=delState[1]["error"]
+				status=delState[1]["status"]
+				return render_template("error.html", title="Erreur", mess=mess), status
 		else:
 			mess=error(e1="Vous devez utiliser le formulaire spécifique.")
 			status = 405
@@ -271,7 +299,13 @@ def apiGenesId(iD):
 				status = res[1]["status"]
 			return jsonify(view), status
 		elif request.method=='DELETE':
-			return jsonify(error), 200
+			delState = delGene(iD)
+			if delState[0]:
+				return jsonify({ "deleted": iD })
+			else:
+				mess=delState[1]["error"]
+				status=delState[1]["status"]
+				return jsonify(mess), status
 
 @app.route("/api/Genes", methods=['POST', 'GET'])
 def apiGenes():

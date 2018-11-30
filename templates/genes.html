@@ -1,17 +1,6 @@
 {% extends "base.html" %}
       {% block scripts %}
-      <script type="text/javascript">
-
-      function confSubmit(form) {
-      if (confirm("Êtes-vous sûr ?")) {
-      form.submit();
-      }
-
-      else {
-      alert("Annulé !");
-      }
-      }
-      </script>
+      <script type="text/javascript" src="{{ url_for('static', filename='js/lib/sure.js') }}"></script>
       {% endblock %}
       {% block main %}
       <h1>Liste des 1000 premiers gènes</h1>

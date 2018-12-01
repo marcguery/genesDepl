@@ -65,69 +65,6 @@ def isGeneinBase(giD, iDs):
 		status = 403
 		return [0, {"error" : mess, "status" : status}]
 
-def executeQuery(query, commit = False):
-	"""Execute a query in the database.
-	Require a query
-	"""
-	cursor = get_db().cursor()
-	cursor.execute(query)
-	if commit:
-		get_db().commit() #PERMANENT CHANGE
-	return cursor
-
-def queryAllTable(table="Genes"):
-	"""Pick all genes in the database.
-	Return a list of column names and a list of tuples for all genes.
-	"""
-	queryKeyes = ("SELECT * FROM %s;" % table)
-	return [1, {"query" : queryKeyes}]
-
-def queryOneGene(iD):
-	"""Pick one gene in the database.
-	iD must belong to Ensembl_Gene_ID column
-	Return a list of column names and a list of tuple for one gene
-	"""
-	queryGenes=queryAllTable()[1]["query"]
-	cursor = executeQuery(queryGenes)
-	genes = cursor.fetchall()
-	iDs = map(lambda x : x[0], genes)
-	inBase = isGeneinBase(iD, iDs)
-	##Check if gene is in database first
-	if not inBase[0]:
-		return [0, inBase[1]]
-	queryGene=("SELECT G.* FROM Genes G WHERE G.Ensembl_Gene_ID = '%s' ;" % iD)
-	return [1, {"query" : queryGene}]
-
-def viewGene(iD):
-	"""Give the representation for a given gene.
-	`gene` key points to a dictionnary of the gene
-	`trans` key points to a list of dictionnary of transcripts
-	Return a dictionnary of gene and its transcripts if successed
-	"""
-	##
-	##Gene
-	one = queryOneGene(iD)
-	if one[0]:
-		queryOne = one[1]["query"]
-	else:
-		return [0, one[1]]
-	cursor = executeQuery(queryOne)
-	info = cursor.fetchone()
-	cols = [description[0] for description in cursor.description]
-	gene = dict(zip(cols, info))
-	##
-	##Transcripts
-	queryTrans = ("""SELECT T.Ensembl_Transcript_ID, T.Transcript_Start, T.Transcript_End
-	FROM Transcripts T WHERE T.Ensembl_Gene_ID = '%s' ;""" % iD)
-	cursor = executeQuery(queryTrans)
-	cols = [column[0] for column in cursor.description]
-	infos = cursor.fetchall()
-	#If no transcripts for this gene
-	trans = [{}] if infos == [] else [dict(zip(cols, row)) for row in infos]
-	##
-	return [1, {"gene" : gene, "trans" : trans}]
-
-
 def verifGene(dictCont):
 	"""Check if informations of a gene is correct.
 	Need a dictionnary for one gene
@@ -171,7 +108,43 @@ def verifGene(dictCont):
 	##
 	return[1, dictCont]
 
+def executeQuery(query, commit = False):
+	"""Execute a query in the database.
+	Require a query
+	Commit is necessary when creating, editing or deleting
+	"""
+	cursor = get_db().cursor()
+	cursor.execute(query)
+	if commit:
+		get_db().commit() #PERMANENT CHANGE
+	return cursor
+
+def queryAllTable(table="Genes"):
+	"""Generate a query of all elements in a given table.
+	Default table is Genes
+	"""
+	queryKeyes = ("SELECT * FROM %s;" % table)
+	return [1, {"query" : queryKeyes}]
+
+def queryOneGene(iD):
+	"""Generate a query to pick one gene in the database.
+	iD must belong to Ensembl_Gene_ID column
+	"""
+	queryGenes=queryAllTable()[1]["query"]
+	cursor = executeQuery(queryGenes)
+	genes = cursor.fetchall()
+	iDs = map(lambda x : x[0], genes)
+	inBase = isGeneinBase(iD, iDs)
+	##Check if gene is in database first
+	if not inBase[0]:
+		return [0, inBase[1]]
+	queryGene=("SELECT G.* FROM Genes G WHERE G.Ensembl_Gene_ID = '%s' ;" % iD)
+	return [1, {"query" : queryGene}]
+
 def queryIns(form):
+	"""Generate a query to insert one gene in the database.
+	iD must belong to Ensembl_Gene_ID column
+	"""
 	dicinfos=form
 	##Verification
 	verif = verifGene(dicinfos)
@@ -216,7 +189,7 @@ def queryEdit(form, iD):
 		return [0, verif[1]]
 
 def queryDel(iD):
-	"""Delete an existing gene from the database.
+	"""Generate a query to delete an existing gene from the database.
 	Require gene iD
 	"""
 	##Verification
@@ -230,6 +203,35 @@ def queryDel(iD):
 		return [0, inBase[1]]
 	queryDel = ("DELETE FROM Genes WHERE Ensembl_Gene_ID = '%s' ;" % iD)
 	return [1, {"query" : queryDel}]
+
+def viewGene(iD):
+	"""Give the representation for a given gene.
+	`gene` key points to a dictionnary of the gene
+	`trans` key points to a list of dictionnary of transcripts
+	Return a dictionnary of gene and its transcripts if successed
+	"""
+	##
+	##Gene
+	one = queryOneGene(iD)
+	if one[0]:
+		queryOne = one[1]["query"]
+	else:
+		return [0, one[1]]
+	cursor = executeQuery(queryOne)
+	info = cursor.fetchone()
+	cols = [description[0] for description in cursor.description]
+	gene = dict(zip(cols, info))
+	##
+	##Transcripts
+	queryTrans = ("""SELECT T.Ensembl_Transcript_ID, T.Transcript_Start, T.Transcript_End
+	FROM Transcripts T WHERE T.Ensembl_Gene_ID = '%s' ;""" % iD)
+	cursor = executeQuery(queryTrans)
+	cols = [column[0] for column in cursor.description]
+	infos = cursor.fetchall()
+	#If no transcripts for this gene
+	trans = [{}] if infos == [] else [dict(zip(cols, row)) for row in infos]
+	##
+	return [1, {"gene" : gene, "trans" : trans}]
 
 
 @app.teardown_appcontext

@@ -7,10 +7,16 @@
     {% endblock %}
   {% block content %}
   <form action="{{ url_for('geneedit', iD=iD) }}" method="post">
-  	{% for col in cols %}
-  	{{col}} : <br>
-  	<input type="text" name={{col}} value={{default[loop.index-1]}}><br>
-  	{% endfor %}
+    {{cols[0]}} : <br>
+    <input type="text" name={{cols[0]}} value={{default[0]}} disabled><br>
+    {% for col in cols[1:4] %}
+     {{col}} : <br>
+     <input type="text" name={{col}} value={{default[loop.index]}}><br>
+    {% endfor %}
+    {% for col in cols[4:] %}
+      {{col}} : <br>
+      <input type="number" name={{col}} value={{default[loop.index+3]}}><br>
+    {% endfor %}
   	<input type="button" onClick="confSubmit(this.form);" name=1 value="Envoyer" />
   </form>
   {% endblock %}

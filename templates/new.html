@@ -7,10 +7,14 @@
     {% endblock %}
   {% block content %}
   <form action="{{ url_for('genenew') }}" method="post">
-  	{% for col in cols %}
-  	{{col}} : <br>
-  	<input type="text" name={{col}}><br>
+  	{% for col in cols[0:4] %}
+  	 {{col}} : <br>
+  	 <input type="text" name={{col}}><br>
   	{% endfor %}
+    {% for col in cols[4:] %}
+      {{col}} : <br>
+      <input type="number" name={{col}}><br>
+    {% endfor %}
   	<input type="button" onClick="confSubmit(this.form);" name=1 value="Envoyer" />
   </form>
   {% endblock %}

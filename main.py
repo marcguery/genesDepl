@@ -272,6 +272,7 @@ def genes():
 		cursor = executeQuery(queryGenes)
 		genes = cursor.fetchall()
 		subgenes=genes[0:1000]
+		subgenes = sorted(subgenes, key=lambda x: x[0])
 		return render_template("genes.html", genes=subgenes, title="Genes")
 
 @app.route("/Genes/view/<iD>", methods=['GET'])

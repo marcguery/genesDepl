@@ -1,10 +1,9 @@
 {% extends "base.html" %}
 {% block scripts %}
 <script src="https://js-dos.com/cdn/js-dos-api.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/lib/doom.css') }}">
 {% endblock %}
 {% block main %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/lib/doom.css') }}">
-
     <div id="dosbox"></div>
     <br/>
     <button onclick="dosbox.requestFullScreen();">Make fullscreen</button><br>

@@ -1,14 +1,14 @@
 #!/usr/bin/python3
 
 #Web
-from flask import Flask, g, url_for, request, app, render_template, redirect, jsonify, make_response, abort
+from flask import Flask, g, url_for, request, app, render_template, redirect, jsonify, make_response
 #Database
 import sqlite3
 import mysql.connector
 #Utils
-import json
-import datetime
-from hashlib import md5
+import json #database infos
+import datetime #database state
+from hashlib import md5 #ETag hash
 
 app = Flask(__name__)
 #Type of database : sql or sqlite
@@ -44,20 +44,39 @@ def get_db():
 
 def error(**somanyerrors):
 	"""Provide a dict containing statements when something went wrong.
-	General statement for al errors plus optionnaly statements
+	General statement for all errors plus optionnaly statements
 	Optionnaly arguments passed to function like 'arg = sentence'
 	"""
+	#General statement
 	err={"error": "Vous ne pouvez pas faire ça comme ça !"}
-	#If arg(s) passed to function
-	if somanyerrors!={}:
+	if somanyerrors!={}: #If arg(s) passed to function
 		for keys in somanyerrors:
 			err[keys]=somanyerrors[keys]
 	return err
 
+def saveDate(date, append=True):
+	"""Save the current state of database in a log file.
+	The date of modification (typically provided by executeQuery()) could be in any format.
+	Append to log file if True, otherwise overwrite.
+	"""
+	if append:
+		with open("log/last-mod.txt", "a") as f:
+			f.write(str(date))
+	else:
+		with open("log/last-mod.txt", "w") as f:
+			f.write(str(date))
+	f.close()
+
+
 def getEtag(date = True, crit = None):
+	"""Generate a md5 hash to be passed to ETag header.
+	If date is True, takes the last date of modification from log file
+	crit argument is a string to be hashed. If both date and crit are provided, 
+		hash is a result of them merged
+	"""
 	if date:
 		with open("log/last-mod.txt", "r") as f:
-			etag = f.readlines()[0]
+			etag = f.readlines()[-1]
 			f.close()
 	else:
 		etag = ""
@@ -67,8 +86,10 @@ def getEtag(date = True, crit = None):
 
 
 def isGeneinBase(giD, iDs):
-	"""Get informations needed for connection.
-	Need to know the database type
+	"""Check if a given gene is in the database.
+	Return an error message for both cases (could be used regarding the context,
+		e.g. editing non existing gene or creating existing gene)
+	If gene is in database first argument returned is 1 otherwise 0
 	"""
 	if giD in iDs:
 		mess=error(e1="Le gène %s existe déjà." % giD)
@@ -80,9 +101,9 @@ def isGeneinBase(giD, iDs):
 		return [0, {"error" : mess, "status" : status}]
 
 def verifGene(dictCont):
-	"""Check if informations of a gene is correct.
+	"""Check if informations of a gene are correct.
 	Need a dictionnary for one gene
-	Return a dictionnary of well formated fields
+	Return 1 and a dictionnary of well formated fields if success
 	"""
 	##Attribut length verification
 	if len(dictCont)!=7:
@@ -126,25 +147,28 @@ def executeQuery(query, commit = False):
 	"""Execute a query in the database.
 	Require a query
 	Commit is necessary when creating, editing or deleting
+	Return a cursor object and a date of modification if commit is True
 	"""
 	modDate = None
 	cursor = get_db().cursor()
 	cursor.execute(query)
 	if commit:
 		get_db().commit() #PERMANENT CHANGE
-		modDate = str(datetime.datetime.now())
+		modDate = datetime.datetime.now()
 	return [cursor, modDate]
 
 def queryAllTable(table="Genes"):
 	"""Generate a query of all elements in a given table.
 	Default table is Genes
+	Return 1 (success) and the string formated query
 	"""
-	queryKeyes = ("SELECT * FROM %s;" % table)
+	queryKeyes = ("SELECT * FROM %s;" % (table,))
 	return [1, {"query" : queryKeyes}]
 
 def queryOneGene(iD):
 	"""Generate a query to pick one gene in the database.
 	iD must belong to Ensembl_Gene_ID column
+	Return 1 (success) and the string formated query
 	"""
 	queryGenes=queryAllTable()[1]["query"]
 	cursor = executeQuery(queryGenes)[0]
@@ -154,12 +178,13 @@ def queryOneGene(iD):
 	##Check if gene is in database first
 	if not inBase[0]:
 		return [0, inBase[1]]
-	queryGene=("SELECT G.* FROM Genes G WHERE G.Ensembl_Gene_ID = '%s' ;" % iD)
+	queryGene=("SELECT G.* FROM Genes G WHERE G.Ensembl_Gene_ID = '%s' ;" % (iD,))
 	return [1, {"query" : queryGene}]
 
 def queryIns(form):
 	"""Generate a query to insert one gene in the database.
 	iD must belong to Ensembl_Gene_ID column
+	Return 1 (success) and the string formated query
 	"""
 	dicinfos=form
 	##Verification
@@ -173,8 +198,10 @@ def queryIns(form):
 	if inBase[0]: #if gene already exists, error
 		return [0, inBase[1]]
 	if verif[0]:
-		queryIns = "INSERT INTO Genes (%s) VALUES (%s)" % (', '.join([*verif[1].keys()]), 
-			', '.join(map(lambda x: "'" + str(x) + "'" , [*verif[1].values()])))
+		cols=', '.join([*verif[1].keys()])
+		vals=', '.join(map(lambda x: "'" + str(x) + "'" , [*verif[1].values()]))
+		queryIns = ("INSERT INTO Genes (%s) VALUES (%s)" % (cols, vals,))
+		print(queryIns)
 		return [1, {"query" : queryIns}]
 	else:
 		return [0, verif[1]]
@@ -182,6 +209,7 @@ def queryIns(form):
 def queryEdit(form, iD):
 	"""Generate a query to edit an existing gene in the database.
 	Require a dictionnary of one gene and its iD
+	Return 1 (success) and the string formated query
 	"""
 	dicinfos = form
 	dicinfos["Ensembl_Gene_ID"]=iD #Reset Id if it has been changed
@@ -199,7 +227,7 @@ def queryEdit(form, iD):
 	if verif[0]:
 		for col in dicinfos:
 			comb.append("%s='%s'" % (col, dicinfos[col]))
-		queryEdit = ("UPDATE Genes SET %s WHERE Ensembl_Gene_ID = '%s' ;" % (",".join([*comb]), iD))
+		queryEdit = ("UPDATE Genes SET %s WHERE Ensembl_Gene_ID = '%s' ;" % (",".join([*comb]), iD,))
 		return [1, {"query" : queryEdit}]
 	else:
 		return [0, verif[1]]
@@ -207,6 +235,7 @@ def queryEdit(form, iD):
 def queryDel(iD):
 	"""Generate a query to delete an existing gene from the database.
 	Require gene iD
+	Return 1 (success) and the string formated query
 	"""
 	##Verification
 	queryAll=queryAllTable()[1]["query"]
@@ -217,14 +246,14 @@ def queryDel(iD):
 	##
 	if not inBase[0]: #if gene does not exist, error
 		return [0, inBase[1]]
-	queryDel = ("DELETE FROM Genes WHERE Ensembl_Gene_ID = '%s' ;" % iD)
+	queryDel = ("DELETE FROM Genes WHERE Ensembl_Gene_ID = '%s' ;" % (iD,))
 	return [1, {"query" : queryDel}]
 
 def viewGene(iD):
 	"""Give the representation for a given gene.
 	`gene` key points to a dictionnary of the gene
 	`trans` key points to a list of dictionnary of transcripts
-	Return a dictionnary of gene and its transcripts if successed
+	Return 1 (success) and a dictionnary of gene and its transcripts if successed
 	"""
 	##
 	##Gene
@@ -240,7 +269,7 @@ def viewGene(iD):
 	##
 	##Transcripts
 	queryTrans = ("""SELECT T.Ensembl_Transcript_ID, T.Transcript_Start, T.Transcript_End
-	FROM Transcripts T WHERE T.Ensembl_Gene_ID = '%s' ;""" % iD)
+	FROM Transcripts T WHERE T.Ensembl_Gene_ID = '%s' ;""" % (iD,))
 	cursor = executeQuery(queryTrans)[0]
 	cols = [column[0] for column in cursor.description]
 	infos = cursor.fetchall()
@@ -252,7 +281,7 @@ def viewGene(iD):
 
 @app.teardown_appcontext
 def close_connection(exception):
-	"""Closeconnection to database.
+	"""Close connection to database.
 	"""
 	db = getattr(g, '_database', None)
 	if db is not None:
@@ -322,9 +351,7 @@ def genedel(iD):
 			if checkQuery[0]:
 				modDate = executeQuery(checkQuery[1]["query"], commit = True)[1]
 				if modDate is not None:
-					with open("log/last-mod.txt", "w") as f:
-						f.write(modDate)
-						f.close()
+					saveDate(modDate)
 				return render_template("del.html", iD=iD, title="Genes")
 			else:
 				mess=checkQuery[1]["error"]
@@ -348,7 +375,8 @@ def genenew():
 		cols = [desc[0] for desc in cursor.description]
 		cols.remove('Transcript_count')
 		if request.method=="GET":
-			return render_template("new.html", title="Genes", cols=cols)
+			gene=[""]*len(cols)
+			return render_template("form.html", title="Genes", cols=cols, default=gene, action="new")
 
 		elif request.method=="POST":
 			dicinfos = request.form.to_dict()
@@ -357,9 +385,7 @@ def genenew():
 				quer=checkQuery[1]["query"]
 				modDate = executeQuery(quer, commit = True)[1]
 				if modDate is not None:
-					with open("log/last-mod.txt", "w") as f:
-						f.write(modDate)
-						f.close()
+					saveDate(modDate)
 				return redirect(url_for('geneview', iD=dicinfos['Ensembl_Gene_ID']), code=302)
 			else:
 				mess = checkQuery[1]["error"]
@@ -392,16 +418,15 @@ def geneedit(iD):
 				gene = [*gene]
 				del gene[-1]
 				##
-				return render_template("edit.html", title="Genes", cols=cols, default=gene, iD=iD)
+				return render_template("form.html", title="Genes", cols=cols, default=gene, action="edit")
 		if request.method=="POST":
+			print(request.form.to_dict())
 			checkQuery = queryEdit(request.form.to_dict(), iD)
 			if checkQuery[0]:
 				quer=checkQuery[1]["query"]
 				modDate = executeQuery(quer, commit=True)[1]
 				if modDate is not None:
-					with open("log/last-mod.txt", "w") as f:
-						f.write(modDate)
-						f.close()
+					saveDate(modDate)
 				return redirect(url_for('geneview', iD=iD), code=302)
 			else:
 				mess = checkQuery[1]["error"]
@@ -429,7 +454,7 @@ def transview(iD):
 	GET : show the transcript
 	"""
 	with app.app_context():
-		queryTran = ("SELECT * FROM Transcripts WHERE Ensembl_Transcript_ID = '%s';" % iD)
+		queryTran = ("SELECT * FROM Transcripts WHERE Ensembl_Transcript_ID = '%s';" % (iD,))
 		cursor = executeQuery(queryTran)[0]
 		infos = cursor.fetchall()[0]
 		tnames = [description[0] for description in cursor.description]
@@ -462,9 +487,7 @@ def apiGenesDeleteiD(iD):
 			quer = checkQuery[1]["query"]
 			modDate = executeQuery(quer, commit = True)[1]
 			if modDate is not None:
-				with open("log/last-mod.txt", "w") as f:
-					f.write(modDate)
-					f.close()
+				saveDate(modDate)
 			return jsonify({ "deleted": iD })
 		else:
 			mess=checkQuery[1]["error"]
@@ -503,9 +526,7 @@ def apiGenesPutiD(iD):
 			quer = checkQueryEdit[1]["query"]
 			modDate = executeQuery(quer, commit = True)[1]
 			if modDate is not None:
-				with open("log/last-mod.txt", "w") as f:
-					f.write(modDate)
-					f.close()
+				saveDate(modDate)
 			resp = make_response(jsonify({"edited": url_for('apiGenesViewiD', iD=req['Ensembl_Gene_ID'], _external=True)}), 200)
 			resp.set_etag(etag)
 			return resp
@@ -513,9 +534,7 @@ def apiGenesPutiD(iD):
 			quer = checkQueryIns[1]["query"]
 			modDate = executeQuery(quer, commit = True)[1]
 			if modDate is not None:
-				with open("log/last-mod.txt", "w") as f:
-					f.write(modDate)
-					f.close()
+				saveDate(modDate)
 			return jsonify({"created": url_for('apiGenesViewiD', iD=req['Ensembl_Gene_ID'], _external=True)})
 		else:
 			mess=[{"edition" : checkQueryEdit[1]["error"]}, {"creation" : checkQueryIns[1]["error"]}]
@@ -614,8 +633,6 @@ def apiPostGenes():
 			modDate = executeQuery(que, commit=True)[1]
 			res["created"].append(url_for('apiGenesViewiD', iD=req[index]['Ensembl_Gene_ID'], _external=True))
 		if modDate is not None:
-			with open("log/last-mod.txt", "w") as f:
-				f.write(modDate)
-				f.close()
+			saveDate(modDate)
 		return jsonify(res), 200
 

@@ -1,0 +1,50 @@
+{% extends "genes.html" %}
+{% block back %}
+    <h4><a href=" {{ url_for('genes') }}">Revenir à la liste de gènes</a></h4>
+{% endblock %}
+{% block main %}
+  <h1>Formulaire de saisie d'un nouveau gène</h1>
+{% endblock %}
+{% block content %}
+  {% if action == "edit" %}
+    <form action="{{ url_for('geneedit', iD=default[0]) }}" method="post">
+  {% else %}
+    <form action="{{ url_for('genenew') }}" method="post">
+  {% endif %}
+    <div class="form-row">
+       <div class="form-group col-md-6">
+         <label for="gid">{{cols[0]}}</label>
+         <input type="text" class="form-control" id="gid" name={{cols[0]}} value={{default[0]}}>
+       </div>
+       <div class="form-group col-md-6">
+         <label for="assName">{{cols[1]}}</label>
+         <input type="text" class="form-control" id="assName" name={{cols[1]}} value={{default[1]}}>
+       </div>
+     </div>
+     <div class="form-row">
+       <div class="form-group col-md-6">
+         <label for="chr">{{cols[2]}}</label>
+         <input type="text" class="form-control" id="chr" name={{cols[2]}} value={{default[2]}}>
+       </div>
+       <div class="form-group col-md-3">
+           <label for="band">{{cols[3]}}</label>
+           <input type="text" class="form-control" id="band" name={{cols[3]}} value={{default[3]}}>
+       </div>
+       <div class="form-group col-md-3">
+         <label for="strand">{{cols[4]}}</label>
+         <input type="number" class="form-control" id="strand" name={{cols[4]}} value={{default[4]}}>
+       </div>
+     </div>
+     <div class="form-row">
+       <div class="form-group col-md-6">
+         <label for="start">{{cols[5]}}</label>
+         <input type="number" class="form-control" id="start" name={{cols[5]}} value={{default[5]}}>
+       </div>
+       <div class="form-group col-md-6">
+         <label for="end">{{cols[6]}}</label>
+         <input type="number" class="form-control" id="end" name={{cols[6]}} value={{default[6]}}>
+       </div>
+     </div>
+    <input type="button" onClick="confSubmit(this.form);" value="Envoyer" />
+  </form>
+{% endblock %}

@@ -1,12 +1,14 @@
 #!/usr/bin/python3
 
 #Web
-from flask import Flask, g, url_for, request, app, render_template, redirect, jsonify
+from flask import Flask, g, url_for, request, app, render_template, redirect, jsonify, make_response, abort
 #Database
 import sqlite3
 import mysql.connector
 #Utils
 import json
+import datetime
+from hashlib import md5
 
 app = Flask(__name__)
 #Type of database : sql or sqlite
@@ -52,6 +54,18 @@ def error(**somanyerrors):
 			err[keys]=somanyerrors[keys]
 	return err
 
+def getEtag(date = True, crit = None):
+	if date:
+		with open("log/last-mod.txt", "r") as f:
+			etag = f.readlines()[0]
+			f.close()
+	else:
+		etag = ""
+	etag = ';'.join([etag, crit]) if crit is not None else etag
+	hetag = md5(etag.encode('utf-8')).hexdigest()
+	return hetag
+
+
 def isGeneinBase(giD, iDs):
 	"""Get informations needed for connection.
 	Need to know the database type
@@ -72,7 +86,7 @@ def verifGene(dictCont):
 	"""
 	##Attribut length verification
 	if len(dictCont)!=7:
-		mess=error(e1="Attributs supplémentaires inattendus du gène %s." % dictCont["Ensembl_Gene_ID"])
+		mess=error(e1="Nombre d'attributs inattendus du gène %s." % dictCont["Ensembl_Gene_ID"])
 		status = 418
 		return [0, {"error" : mess, "status" : status}]
 	##
@@ -113,11 +127,13 @@ def executeQuery(query, commit = False):
 	Require a query
 	Commit is necessary when creating, editing or deleting
 	"""
+	modDate = None
 	cursor = get_db().cursor()
 	cursor.execute(query)
 	if commit:
 		get_db().commit() #PERMANENT CHANGE
-	return cursor
+		modDate = str(datetime.datetime.now())
+	return [cursor, modDate]
 
 def queryAllTable(table="Genes"):
 	"""Generate a query of all elements in a given table.
@@ -131,7 +147,7 @@ def queryOneGene(iD):
 	iD must belong to Ensembl_Gene_ID column
 	"""
 	queryGenes=queryAllTable()[1]["query"]
-	cursor = executeQuery(queryGenes)
+	cursor = executeQuery(queryGenes)[0]
 	genes = cursor.fetchall()
 	iDs = map(lambda x : x[0], genes)
 	inBase = isGeneinBase(iD, iDs)
@@ -149,7 +165,7 @@ def queryIns(form):
 	##Verification
 	verif = verifGene(dicinfos)
 	queryAll=queryAllTable()[1]["query"]
-	cursor = executeQuery(queryAll)
+	cursor = executeQuery(queryAll)[0]
 	genes = cursor.fetchall()
 	iDs = map(lambda x : x[0], genes)
 	inBase = isGeneinBase(dicinfos["Ensembl_Gene_ID"], iDs)
@@ -173,7 +189,7 @@ def queryEdit(form, iD):
 	##Verification
 	verif = verifGene(dicinfos)
 	queryAll=queryAllTable()[1]["query"]
-	cursor = executeQuery(queryAll)
+	cursor = executeQuery(queryAll)[0]
 	genes = cursor.fetchall()
 	iDs = map(lambda x : x[0], genes)
 	inBase = isGeneinBase(iD, iDs)
@@ -194,7 +210,7 @@ def queryDel(iD):
 	"""
 	##Verification
 	queryAll=queryAllTable()[1]["query"]
-	cursor = executeQuery(queryAll)
+	cursor = executeQuery(queryAll)[0]
 	genes = cursor.fetchall()
 	iDs = map(lambda x : x[0], genes)
 	inBase = isGeneinBase(iD, iDs)
@@ -217,7 +233,7 @@ def viewGene(iD):
 		queryOne = one[1]["query"]
 	else:
 		return [0, one[1]]
-	cursor = executeQuery(queryOne)
+	cursor = executeQuery(queryOne)[0]
 	info = cursor.fetchone()
 	cols = [description[0] for description in cursor.description]
 	gene = dict(zip(cols, info))
@@ -225,7 +241,7 @@ def viewGene(iD):
 	##Transcripts
 	queryTrans = ("""SELECT T.Ensembl_Transcript_ID, T.Transcript_Start, T.Transcript_End
 	FROM Transcripts T WHERE T.Ensembl_Gene_ID = '%s' ;""" % iD)
-	cursor = executeQuery(queryTrans)
+	cursor = executeQuery(queryTrans)[0]
 	cols = [column[0] for column in cursor.description]
 	infos = cursor.fetchall()
 	#If no transcripts for this gene
@@ -269,7 +285,7 @@ def genes():
 	"""
 	with app.app_context():
 		queryGenes = 'SELECT Ensembl_Gene_ID, Associated_Gene_Name FROM Genes;'
-		cursor = executeQuery(queryGenes)
+		cursor = executeQuery(queryGenes)[0]
 		genes = cursor.fetchall()
 		subgenes=genes[0:1000]
 		subgenes = sorted(subgenes, key=lambda x: x[0])
@@ -304,7 +320,11 @@ def genedel(iD):
 		if request.method=="POST":
 			checkQuery = queryDel(iD)
 			if checkQuery[0]:
-				executeQuery(checkQuery[1]["query"], commit = True)
+				modDate = executeQuery(checkQuery[1]["query"], commit = True)[1]
+				if modDate is not None:
+					with open("log/last-mod.txt", "w") as f:
+						f.write(modDate)
+						f.close()
 				return render_template("del.html", iD=iD, title="Genes")
 			else:
 				mess=checkQuery[1]["error"]
@@ -324,7 +344,7 @@ def genenew():
 	"""
 	with app.app_context():
 		quer=queryAllTable()[1]["query"]
-		cursor = executeQuery(quer)
+		cursor = executeQuery(quer)[0]
 		cols = [desc[0] for desc in cursor.description]
 		cols.remove('Transcript_count')
 		if request.method=="GET":
@@ -335,7 +355,11 @@ def genenew():
 			checkQuery=queryIns(dicinfos)
 			if checkQuery[0]:
 				quer=checkQuery[1]["query"]
-				executeQuery(quer, commit = True)
+				modDate = executeQuery(quer, commit = True)[1]
+				if modDate is not None:
+					with open("log/last-mod.txt", "w") as f:
+						f.write(modDate)
+						f.close()
 				return redirect(url_for('geneview', iD=dicinfos['Ensembl_Gene_ID']), code=302)
 			else:
 				mess = checkQuery[1]["error"]
@@ -361,7 +385,7 @@ def geneedit(iD):
 			else:
 				##Remove Transcript count from fields
 				quer = checkQuery[1]["query"]
-				cursor = executeQuery(quer)
+				cursor = executeQuery(quer)[0]
 				gene = cursor.fetchone()
 				cols=[desc[0] for desc in cursor.description]
 				cols.remove('Transcript_count')
@@ -373,7 +397,11 @@ def geneedit(iD):
 			checkQuery = queryEdit(request.form.to_dict(), iD)
 			if checkQuery[0]:
 				quer=checkQuery[1]["query"]
-				executeQuery(quer, commit=True)
+				modDate = executeQuery(quer, commit=True)[1]
+				if modDate is not None:
+					with open("log/last-mod.txt", "w") as f:
+						f.write(modDate)
+						f.close()
 				return redirect(url_for('geneview', iD=iD), code=302)
 			else:
 				mess = checkQuery[1]["error"]
@@ -389,7 +417,7 @@ def trans():
 	"""
 	with app.app_context():
 		queryTrans = 'SELECT Ensembl_Transcript_ID, Transcript_Biotype, Ensembl_Gene_ID FROM Transcripts;'
-		cursor = executeQuery(queryTrans)
+		cursor = executeQuery(queryTrans)[0]
 		trans = cursor.fetchall()
 		subtrans=trans[1:1000]
 		return render_template("trans.html", trans=subtrans, title="Transcrits")
@@ -402,39 +430,98 @@ def transview(iD):
 	"""
 	with app.app_context():
 		queryTran = ("SELECT * FROM Transcripts WHERE Ensembl_Transcript_ID = '%s';" % iD)
-		cursor = executeQuery(queryTran)
+		cursor = executeQuery(queryTran)[0]
 		infos = cursor.fetchall()[0]
 		tnames = [description[0] for description in cursor.description]
 		return render_template("transview.html", iD=iD, tnames=tnames, infos=infos, title="Transcrits")
 
-@app.route("/api/Genes/<iD>", methods=['GET', 'DELETE'])
-def apiGenesId(iD):
-	"""API route to deal with a single gene given its iD.
-	Accept both GET and DELETE methods
+@app.route("/api/Genes/<iD>", methods=['GET'])
+def apiGenesViewiD(iD):
+	"""API route to visualize a single gene given its iD.
 	GET : show the gene in a json format
+	"""
+	with app.app_context():
+		res = viewGene(iD)
+		if res[0]:
+			view = res[1]['gene']
+			view['transcripts'] = res[1]['trans']
+			status = 200
+		else:
+			view = res[1]["error"]
+			status = res[1]["status"]
+		return jsonify(view), status
+
+@app.route("/api/Genes/<iD>", methods=['DELETE'])
+def apiGenesDeleteiD(iD):
+	"""API route to delete a gene given its iD.
 	DELETE : delete the gene from the database
 	"""
 	with app.app_context():
-		if request.method=='GET':
-			res = viewGene(iD)
-			if res[0]:
-				view = res[1]['gene']
-				view['transcripts'] = res[1]['trans']
-				status = 200
-			else:
-				view = res[1]["error"]
-				status = res[1]["status"]
-			return jsonify(view), status
-		elif request.method=='DELETE':
-			checkQuery = queryDel(iD)
-			if checkQuery[0]:
-				quer = checkQuery[1]["query"]
-				executeQuery(quer, commit = True)
-				return jsonify({ "deleted": iD })
-			else:
-				mess=checkQuery[1]["error"]
-				status=checkQuery[1]["status"]
-				return jsonify(mess), status
+		checkQuery = queryDel(iD)
+		if checkQuery[0]:
+			quer = checkQuery[1]["query"]
+			modDate = executeQuery(quer, commit = True)[1]
+			if modDate is not None:
+				with open("log/last-mod.txt", "w") as f:
+					f.write(modDate)
+					f.close()
+			return jsonify({ "deleted": iD })
+		else:
+			mess=checkQuery[1]["error"]
+			status=checkQuery[1]["status"]
+			return jsonify(mess), status
+
+@app.route("/api/Genes/<iD>", methods=['PUT'])
+def apiGenesPutiD(iD):
+	"""API route to edit/create a gene given its iD.
+	PUT : edit the gene if it exists
+	PUT : create the gene if it does not exist
+	Accept a dictionnary of one well formated gene (see apiPostGenes)
+	Return 304 if request has not changed since last request (for editing).
+		check values of If-None-Match (request) and ETag (response) headers
+	"""
+	with app.app_context():
+		req=request.json
+		if not isinstance(req, dict):
+			mess=error(e2="Vous ne passerez pas !")
+			status=418
+			return jsonify(mess), status
+		if req["Ensembl_Gene_ID"]!=iD:
+			err=error(e1="Les gènes %s et %s ne correspondent pas" % (req["Ensembl_Gene_ID"], iD))
+			status=403
+			return jsonify(err), status
+		checkQueryEdit=queryEdit(req, iD)
+		checkQueryIns=queryIns(req)
+		if checkQueryEdit[0] and checkQueryIns[0]:
+			return jsonify(error())
+		if checkQueryEdit[0]:
+			etag=getEtag(date=False, crit=str(req))
+			if etag in request.if_none_match:
+				resp = make_response("", 304)
+				resp.set_etag(etag)
+				return (resp)
+			quer = checkQueryEdit[1]["query"]
+			modDate = executeQuery(quer, commit = True)[1]
+			if modDate is not None:
+				with open("log/last-mod.txt", "w") as f:
+					f.write(modDate)
+					f.close()
+			resp = make_response(jsonify({"edited": url_for('apiGenesViewiD', iD=req['Ensembl_Gene_ID'], _external=True)}), 200)
+			resp.set_etag(etag)
+			return resp
+		elif checkQueryIns[0]:
+			quer = checkQueryIns[1]["query"]
+			modDate = executeQuery(quer, commit = True)[1]
+			if modDate is not None:
+				with open("log/last-mod.txt", "w") as f:
+					f.write(modDate)
+					f.close()
+			return jsonify({"created": url_for('apiGenesViewiD', iD=req['Ensembl_Gene_ID'], _external=True)})
+		else:
+			mess=[{"edition" : checkQueryEdit[1]["error"]}, {"creation" : checkQueryIns[1]["error"]}]
+			status=400
+			return jsonify(mess), status
+
 
 @app.route("/api/Genes", methods=['GET'])
 def apiGetGenes():
@@ -444,17 +531,24 @@ def apiGetGenes():
 	Genes are sorted by iD value
 	Start index is 0 by default (first gene of the database)
 	example of use : /api/Genes/?offset=100
+	Return 304 if database last modification and offset have not changed since last request.
+		check values of If-None-Match (request) and ETag (response) headers
 	"""
 	with app.app_context():
 		offset = request.args.get('offset', default = 0, type = int)
+		etag = getEtag(crit=str(offset))
+		if etag in request.if_none_match:
+			resp = make_response("", 304)
+			resp.set_etag(etag)
+			return (resp)
 		queryAll = queryAllTable()[1]["query"]
-		cursor = executeQuery(queryAll)
+		cursor = executeQuery(queryAll)[0]
 		genes = cursor.fetchall()
 		cols = [desc[0] for desc in cursor.description]
 		res = []
 		for index, row in enumerate(genes):
 			res.append(dict(zip(cols, row)))
-			res[index]["href"] = url_for('apiGenesId', iD=res[index]['Ensembl_Gene_ID'], _external=True)
+			res[index]["href"] = url_for('apiGenesViewiD', iD=res[index]['Ensembl_Gene_ID'], _external=True)
 		sortRes = sorted(res, key=lambda x: x['Ensembl_Gene_ID'])
 		prev = url_for('apiGetGenes', offset=max(0,offset-100), _external=True)
 		nexte = url_for('apiGetGenes', offset=min(offset+100, len(sortRes)), _external=True)
@@ -464,7 +558,9 @@ def apiGetGenes():
 		"prev": prev,
 		"next": nexte,
 		}
-		return jsonify(geneSet)	
+		resp = make_response(jsonify(geneSet), 200)
+		resp.set_etag(etag)
+		return resp
 
 @app.route("/api/Genes", methods=['POST'])
 def apiPostGenes():
@@ -515,7 +611,11 @@ def apiPostGenes():
 			else:
 				return jsonify(quer[1]["error"]), quer[1]["status"]
 		for index, que in enumerate(quers):
-			re = executeQuery(que, commit=True)
-			res["created"].append(url_for('apiGenesId', iD=req[index]['Ensembl_Gene_ID'], _external=True))
+			modDate = executeQuery(que, commit=True)[1]
+			res["created"].append(url_for('apiGenesViewiD', iD=req[index]['Ensembl_Gene_ID'], _external=True))
+		if modDate is not None:
+			with open("log/last-mod.txt", "w") as f:
+				f.write(modDate)
+				f.close()
 		return jsonify(res), 200
 

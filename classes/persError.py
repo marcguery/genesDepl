@@ -1,10 +1,16 @@
 
 class dictError(Exception):
-	"""docstring for ClassName"""
+	"""Personnalised error that is iterable"""
 	def __init__(self, mess):
-		super(Exception, self).__init__()
-		self.message = mess
-	def __repr__(self):
-		return self.message
+		"""Initialize with mess as a dict only
+		"""
+		Exception.__init__(self)
+		try:
+			assert isinstance(mess, dict)
+			self.message = mess
+		except AssertionError:
+			mess="dictError must be initialize with dict only"
+			raise TypeError(mess)
+
 	def __getitem__(self, item):
-         return self.message[item]
+		return self.message[item]

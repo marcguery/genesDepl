@@ -79,9 +79,7 @@ def genedel(iD):
 		if request.method=="POST":
 			try:
 				checkQuery = q.queryDel(iD)
-				modDate = q.executeQuery(checkQuery["query"], commit = True)[1]
-				if modDate is not None:
-					q.saveDate(modDate)
+				q.executeQuery(checkQuery["query"], commit = True, save = True)
 				return render_template("del.html", iD=iD, title="Genes")
 			except dictError as e:
 				mess=e["errors"]
@@ -114,9 +112,7 @@ def genenew():
 			try:
 				checkQuery=q.queryIns(dicinfos)
 				quer=checkQuery["query"]
-				modDate = q.executeQuery(quer, commit = True)[1]
-				if modDate is not None:
-					q.saveDate(modDate)
+				q.executeQuery(quer, commit = True, save = True)
 				return redirect(url_for('geneview', iD=dicinfos['Ensembl_Gene_ID']), code=302)
 			except dictError as e:
 				mess = e["errors"]
@@ -155,9 +151,7 @@ def geneedit(iD):
 			try:
 				checkQuery = q.queryEdit(request.form.to_dict(), iD)
 				quer=checkQuery["query"]
-				modDate = q.executeQuery(quer, commit=True)[1]
-				if modDate is not None:
-					q.saveDate(modDate)
+				q.executeQuery(quer, commit = True, save = True)
 				return redirect(url_for('geneview', iD=iD), code=302)
 			except dictError as e:
 				mess = e["errors"]
@@ -221,7 +215,7 @@ def apiGenesGet():
 			res[index]["href"] = url_for('apiGenesViewiD', iD=res[index]['Ensembl_Gene_ID'], _external=True)
 		sortRes = sorted(res, key=lambda x: x['Ensembl_Gene_ID'])
 		prev = url_for('apiGenesGet', offset=max(0,offset-100), _external=True)
-		nexte = url_for('apiGenesGet', offset=min(offset+100, len(sortRes)), _external=True)
+		nexte = url_for('apiGenesGet', offset=min(offset+100, len(sortRes)-100), _external=True)
 		geneSet = {"items": sortRes[offset:offset+99],
 		"first": offset+1,
 		"last": offset+100,
@@ -233,7 +227,7 @@ def apiGenesGet():
 		return resp
 
 @app.route("/api/Genes", methods=['POST'])
-def apiPostGenes():
+def apiGenesPost():
 	"""API route to create genes.
 	Accept only POST method
 	POST : create genes given json formated genes
@@ -295,10 +289,9 @@ def apiPostGenes():
 				source={"api" : "Insertion de gènes"})
 			return jsonify({"errors" : mess}), status
 		for index, que in enumerate(quers):
-			modDate = q.executeQuery(que, commit=True)[1]
+			modDate = q.executeQuery(que, commit = True, save = False)[1]
 			res["created"].append(url_for('apiGenesViewiD', iD=req[index]['Ensembl_Gene_ID'], _external=True))
-		if modDate is not None:
-			q.saveDate(modDate)
+		q.saveDate(modDate)
 		return jsonify(res), 200
 
 
@@ -316,6 +309,7 @@ def apiGenesViewiD(iD):
 		except dictError as e:
 			view = e["errors"]
 			status = e["status"]
+			return jsonify({"errors":view}), status
 		etag = q.getEtag()
 		if etag in request.if_none_match:#If ETag is already in cache, do not query again
 			status=304
@@ -335,21 +329,19 @@ def apiGenesDeleteiD(iD):
 		try:
 			checkQuery = q.queryDel(iD)
 			quer = checkQuery["query"]
-			modDate = q.executeQuery(quer, commit = True)[1]
-			if modDate is not None:
-				q.saveDate(modDate)
+			q.executeQuery(quer, commit = True, save =True)
 			return jsonify({ "deleted": iD })
 		except dictError as e:
 			mess=e["errors"]
 			status=e["status"]
-			return jsonify(mess), status
+			return jsonify({"errors":mess}), status
 
 @app.route("/api/Genes/<iD>", methods=['PUT'])
 def apiGenesPutiD(iD):
 	"""API route to edit/create a gene given its iD.
 	PUT : edit the gene if it exists
 	PUT : create the gene if it does not exist
-	Accept a dictionnary of one well formated gene (see apiPostGenes)
+	Accept a dictionnary of one well formated gene (see apiGenesPost)
 	Return 304 if request has not changed since last request (for editing).
 		check values of If-None-Match (request) and ETag (response) headers
 	"""
@@ -362,13 +354,13 @@ def apiGenesPutiD(iD):
 			return jsonify({"errors" : [mess]}), status
 		if req["Ensembl_Gene_ID"]!=iD:
 			status=403
-			err=q.error(detail="Les gènes %s et %s ne correspondent pas" % (req["Ensembl_Gene_ID"], iD), 
+			mess=q.error(detail="Les gènes %s et %s ne correspondent pas" % (req["Ensembl_Gene_ID"], iD), 
 				status=status, source={"api" : "Insertion ou modification d'un gène"})			
-			return jsonify(err), status
+			return jsonify({"errors" : [mess]}), status
 		try:
 			checkQueryEdit=q.queryEdit(req, iD)
 			checkQueryIns=q.queryIns(req)
-			return jsonify(error)
+			return jsonify({"errors" : [q.error()]})
 		except:
 			pass
 		try:
@@ -380,9 +372,7 @@ def apiGenesPutiD(iD):
 				resp = make_response(jsonify(""), status)
 				return resp
 			quer = checkQueryEdit["query"]
-			modDate = q.executeQuery(quer, commit = True)[1]
-			if modDate is not None:
-				q.saveDate(modDate)
+			q.executeQuery(quer, commit = True, save = True)
 			resp = make_response(jsonify({"edited": url_for('apiGenesViewiD', iD=req['Ensembl_Gene_ID'], _external=True)}), 200)
 			etag=q.getEtag() #This is the updated ETag that any client have to obtain before querying
 			resp.set_etag(etag)
@@ -392,9 +382,7 @@ def apiGenesPutiD(iD):
 		try:
 			checkQueryIns=q.queryIns(req)
 			quer = checkQueryIns["query"]
-			modDate = q.executeQuery(quer, commit = True)[1]
-			if modDate is not None:
-				q.saveDate(modDate)
+			q.executeQuery(quer, commit = True, save = True)
 			return jsonify({"created": url_for('apiGenesViewiD', iD=req['Ensembl_Gene_ID'], _external=True)})
 		except dictError as e:
 			insErr=e["errors"]

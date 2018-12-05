@@ -37,7 +37,11 @@ class DataBase(object):
 	def date(self):
 		"""Return the date of last modification of the log
 		"""
-		return os.path.getmtime(self.log)
+		try:
+			return os.path.getmtime(self.log)
+		except:
+			mess="Le fichier log est introuvable."
+			raise FileNotFoundError(mess)
 
 	def change(self, loc=None, dbtype=None, log=None, detail=None):
 		self.location = loc if loc is not None else self.location

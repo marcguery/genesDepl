@@ -33,14 +33,22 @@ class Query(DataBase):
 		if db is None:
 			if self.dbtype=='sql':
 				dbinfos=self.linkDb(self.dbtype)
-				db = g._database = mysql.connector.connect(
-					user=dbinfos['pers']['login'],
-					password=dbinfos['pers']['password'],
-					host=dbinfos['base']['host'],
-					database=dbinfos['base']['database'])
+				try:
+					db = g._database = mysql.connector.connect(
+						user=dbinfos['pers']['login'],
+						password=dbinfos['pers']['password'],
+						host=dbinfos['base']['host'],
+						database=dbinfos['base']['database'])
+				except:
+					mess="Impossible de se connecter à la base de données MySQL. Vous devriez vérifier vos fichiers de configuration."
+					raise Exception(mess)
 			elif self.dbtype=='sqlite':
 				dbinfos=self.linkDb(self.dbtype)
-				db = g._database = sqlite3.connect(str(self.location) + str(dbinfos['database']))
+				try:
+					db = g._database = sqlite3.connect(str(self.location) + str(dbinfos['database']))
+				except:
+					mess="Le fichier sqlite est introuvable. Vous devriez vérifier vos fichiers de configuration."
+					raise Exception(mess)
 		return db
 
 	def error(self, status=400, title="Vous ne pouvez pas faire ça comme ça.", source={}, detail=None):
@@ -60,13 +68,17 @@ class Query(DataBase):
 		The date of modification (typically provided by executeQuery()) could be in any format.
 		Append to log file if True, otherwise overwrite.
 		"""
-		if append:
-			with open(self.log, "a") as f:
-				f.write(str(date)+"\n")
-		else:
-			with open(self.log, "w") as f:
-				f.write(str(date)+"\n")
-		f.close()
+		try:
+			if append:
+				with open(self.log, "a") as f:
+					f.write(str(date)+"\n")
+			else:
+				with open(self.log, "w") as f:
+					f.write(str(date)+"\n")
+			f.close()
+		except:
+			mess="Impossible de sauver la date de modification, log introuvable."
+			raise FileNotFoundError(mess)
 
 	def getEtag(self, date = True, crit = None):
 		"""Generate a md5 hash to be passed to ETag header.
@@ -76,7 +88,6 @@ class Query(DataBase):
 		"""
 		if date:
 			etag=str(self.date)
-			print(etag)
 		else:
 			etag = ""
 		etag = ';'.join([etag, crit]) if crit is not None else etag
@@ -115,7 +126,7 @@ class Query(DataBase):
 		if len(dictCont)!=7:
 			status = 418
 			mess=self.error(title="Mauvais encodage du gène %s." % dictCont["Ensembl_Gene_ID"], 
-				detail="Nombre d'attributs inattendus, les champs optionnels, même nuls, doivent apparaître.", status=status,
+				detail="Nombre d'attributs inattendu, les champs optionnels, même nuls, doivent apparaître.", status=status,
 				source={"verif" : "Format du gène"})
 			raise dictError({"errors" : [mess], "status" : status})
 		##
@@ -156,7 +167,7 @@ class Query(DataBase):
 		##
 		return dictCont
 
-	def executeQuery(self, query, commit = False):
+	def executeQuery(self, query, commit = False, save = False):
 		"""Execute a query in the database.
 		Require a query
 		Commit is necessary when creating, editing or deleting
@@ -168,6 +179,8 @@ class Query(DataBase):
 		if commit:
 			self.getDb().commit() #PERMANENT CHANGE
 			modDate = datetime.datetime.now()
+			if save:
+				self.saveDate(modDate)
 		return [cursor, modDate]
 
 	def queryAllTable(self, table="Genes"):

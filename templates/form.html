@@ -2,6 +2,9 @@
 {% block back %}
     <h4><a href=" {{ url_for('genes') }}">Revenir à la liste de gènes</a></h4>
 {% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/lib/form.js') }}" defer></script>
+{% endblock %}
 {% block main %}
   {% if action == "edit" %}
     <h1>Formulaire de modification du gène {{default[0]}} </h1>
@@ -21,38 +24,38 @@
          {% if action == "edit" %}
           <input type="text" class="form-control" id="gid" name={{cols[0]}} value={{default[0]}} disabled>
          {% else %}
-          <input type="text" class="form-control" id="gid" name={{cols[0]}} value={{default[0]}}>
+          <input type="text" class="form-control" id="gid" name={{cols[0]}} onchange="listenBoxes();" value={{default[0]}}>
          {% endif %}
        </div>
        <div class="form-group col-md-6">
          <label for="assName">{{cols[1]}}</label>
-         <input type="text" class="form-control" id="assName" name={{cols[1]}} value={{default[1]}}>
+         <input type="text" class="form-control" id="assName" name={{cols[1]}} onchange="listenBoxes();" value={{default[1]}}>
        </div>
      </div>
      <div class="form-row">
        <div class="form-group col-md-6">
          <label for="chr">{{cols[2]}}</label>
-         <input type="text" class="form-control" id="chr" name={{cols[2]}} value={{default[2]}}>
+         <input type="text" class="form-control" id="chr" name={{cols[2]}} onchange="listenBoxes();" value={{default[2]}}>
        </div>
        <div class="form-group col-md-3">
            <label for="band">{{cols[3]}}</label>
-           <input type="text" class="form-control" id="band" name={{cols[3]}} value={{default[3]}}>
+           <input type="text" class="form-control" id="band" name={{cols[3]}} onchange="listenBoxes();" value={{default[3]}}>
        </div>
        <div class="form-group col-md-3">
          <label for="strand">{{cols[4]}}</label>
-         <input type="number" class="form-control" id="strand" name={{cols[4]}} value={{default[4]}}>
+         <input type="number" class="form-control" id="strand" name={{cols[4]}} onchange="listenBoxes();" value={{default[4]}}>
        </div>
      </div>
      <div class="form-row">
        <div class="form-group col-md-6">
          <label for="start">{{cols[5]}}</label>
-         <input type="number" class="form-control" id="start" name={{cols[5]}} value={{default[5]}}>
+         <input type="number" class="form-control" id="start" name={{cols[5]}} onchange="listenBoxes();" value={{default[5]}}>
        </div>
        <div class="form-group col-md-6">
          <label for="end">{{cols[6]}}</label>
-         <input type="number" class="form-control" id="end" name={{cols[6]}} value={{default[6]}}>
+         <input type="number" class="form-control" id="end" name={{cols[6]}} onchange="listenBoxes();" value={{default[6]}}>
        </div>
      </div>
-    <input type="button" onClick="confSubmit(this.form);" value="Envoyer"/>
+    <input type="button" onClick="confSubmit(this.form);" value="Envoyer" disabled />
   </form>
 {% endblock %}

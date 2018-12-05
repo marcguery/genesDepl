@@ -62,10 +62,10 @@ class Query(DataBase):
 		"""
 		if append:
 			with open(self.log, "a") as f:
-				f.write(str(date))
+				f.write(str(date)+"\n")
 		else:
 			with open(self.log, "w") as f:
-				f.write(str(date))
+				f.write(str(date)+"\n")
 		f.close()
 
 	def getEtag(self, date = True, crit = None):

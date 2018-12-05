@@ -4,8 +4,8 @@ class DataBase(object):
 	"""Initialize a DataBase object with all the informations needed
 	location : repository of the database(s)
 	dbtype : Type of database to use
-	log : absolute (or relative) path to log file
-	detail : absolute (or relative) path for JSON parsed details
+	log : path to log file
+	detail : path for JSON parsed details
 		here is a template:
 		{
 			"sql":{

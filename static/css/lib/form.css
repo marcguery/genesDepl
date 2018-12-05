@@ -1,0 +1,4 @@
+input#gid, input#assName, input#start, input#end {
+    border: 2px solid lightblue;
+    border-radius: 4px;
+}

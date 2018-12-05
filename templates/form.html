@@ -4,6 +4,7 @@
 {% endblock %}
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/lib/form.js') }}" defer></script>
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename ='css/lib/form.css')}}">
 {% endblock %}
 {% block main %}
   {% if action == "edit" %}

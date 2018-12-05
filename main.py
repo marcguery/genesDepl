@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 #Web
 from flask import Flask, g, url_for, request, app, render_template, redirect, jsonify, make_response
 #Utils
@@ -6,6 +5,7 @@ from classes.persError import dictError #Personnalied error class
 from classes.baseDeal import Query
 
 app = Flask(__name__)
+#Create Query object each time the app is launched
 q=Query()
 
 @app.teardown_appcontext

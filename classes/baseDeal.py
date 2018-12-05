@@ -68,7 +68,6 @@ class Query(DataBase):
 				f.write(str(date))
 		f.close()
 
-
 	def getEtag(self, date = True, crit = None):
 		"""Generate a md5 hash to be passed to ETag header.
 		If date is True, takes the last date of modification from log file
@@ -76,15 +75,13 @@ class Query(DataBase):
 			hash is a result of them merged
 		"""
 		if date:
-			with open(self.log, "r") as f:
-				etag = f.readlines()[-1]
-				f.close()
+			etag=str(self.date)
+			print(etag)
 		else:
 			etag = ""
 		etag = ';'.join([etag, crit]) if crit is not None else etag
 		hetag = md5(etag.encode('utf-8')).hexdigest()
 		return hetag
-
 
 	def isInBase(self, giD, iDs):
 		"""Check if a given gene is in the database.

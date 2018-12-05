@@ -1,3 +1,5 @@
+import os
+
 class DataBase(object):
 	"""Initialize a DataBase object with all the informations needed
 	location : repository of the database(s)
@@ -31,6 +33,11 @@ class DataBase(object):
 		self.dbtype = "sqlite"
 		self.log = "log/last-mod.txt"
 		self.detail = "details.json"
+	@property
+	def date(self):
+		"""Return the date of last modification of the log
+		"""
+		return os.path.getmtime(self.log)
 
 	def change(self, loc=None, dbtype=None, log=None, detail=None):
 		self.location = loc if loc is not None else self.location

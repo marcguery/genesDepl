@@ -6,6 +6,7 @@ from classes.persError import dictError #Personnalied error class
 from classes.baseDeal import Query
 
 app = Flask(__name__)
+q=Query()
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -42,7 +43,7 @@ def genes():
 	"""
 	with app.app_context():
 		queryGenes = 'SELECT Ensembl_Gene_ID, Associated_Gene_Name FROM Genes;'
-		cursor = Query().executeQuery(queryGenes)[0]
+		cursor = q.executeQuery(queryGenes)[0]
 		genes = cursor.fetchall()
 		subgenes=genes[0:1000]
 		subgenes = sorted(subgenes, key=lambda x: x[0])
@@ -57,8 +58,7 @@ def geneview(iD):
 	with app.app_context():
 		
 		try:
-			res = Query().viewGene(iD)
-			print("non")
+			res = q.viewGene(iD)
 			trans = res['trans']
 			genes = res['gene']
 			return render_template("geneview.html", infos=genes.values(), trans=trans, 
@@ -78,10 +78,10 @@ def genedel(iD):
 	with app.app_context():
 		if request.method=="POST":
 			try:
-				checkQuery = Query().queryDel(iD)
-				modDate = Query().executeQuery(checkQuery["query"], commit = True)[1]
+				checkQuery = q.queryDel(iD)
+				modDate = q.executeQuery(checkQuery["query"], commit = True)[1]
 				if modDate is not None:
-					Query().saveDate(modDate)
+					q.saveDate(modDate)
 				return render_template("del.html", iD=iD, title="Genes")
 			except dictError as e:
 				mess=e["errors"]
@@ -89,7 +89,7 @@ def genedel(iD):
 				return render_template("error.html", title="Erreur", mess=mess), status
 		else:
 			status = 405
-			mess=Query().error(detail="Vous devez utiliser le formulaire spécifique du gène %s." % iD, status=status,
+			mess=q.error(detail="Vous devez utiliser le formulaire spécifique du gène %s." % iD, status=status,
 				source={"query" : "Suppression"})
 			return render_template("error.html", title="Erreur", mess=[mess]), status
 
@@ -101,8 +101,8 @@ def genenew():
 	POST : create the gene
 	"""
 	with app.app_context():
-		quer=Query().queryAllTable()["query"]
-		cursor = Query().executeQuery(quer)[0]
+		quer=q.queryAllTable()["query"]
+		cursor = q.executeQuery(quer)[0]
 		cols = [desc[0] for desc in cursor.description]
 		cols.remove('Transcript_count')
 		if request.method=="GET":
@@ -112,11 +112,11 @@ def genenew():
 		elif request.method=="POST":
 			dicinfos = request.form.to_dict()
 			try:
-				checkQuery=Query().queryIns(dicinfos)
+				checkQuery=q.queryIns(dicinfos)
 				quer=checkQuery["query"]
-				modDate = Query().executeQuery(quer, commit = True)[1]
+				modDate = q.executeQuery(quer, commit = True)[1]
 				if modDate is not None:
-					Query().saveDate(modDate)
+					q.saveDate(modDate)
 				return redirect(url_for('geneview', iD=dicinfos['Ensembl_Gene_ID']), code=302)
 			except dictError as e:
 				mess = e["errors"]
@@ -135,10 +135,10 @@ def geneedit(iD):
 			##Verification
 			##
 			try:
-				checkQuery = Query().queryOneGene(iD)
+				checkQuery = q.queryOneGene(iD)
 				##Remove Transcript count from fields
 				quer = checkQuery["query"]
-				cursor = Query().executeQuery(quer)[0]
+				cursor = q.executeQuery(quer)[0]
 				gene = cursor.fetchone()
 				cols=[desc[0] for desc in cursor.description]
 				cols.remove('Transcript_count')
@@ -152,13 +152,12 @@ def geneedit(iD):
 				return render_template("error.html", title="Erreur", mess=mess), status
 				
 		if request.method=="POST":
-			print(request.form.to_dict())
 			try:
-				checkQuery = Query().queryEdit(request.form.to_dict(), iD)
+				checkQuery = q.queryEdit(request.form.to_dict(), iD)
 				quer=checkQuery["query"]
-				modDate = Query().executeQuery(quer, commit=True)[1]
+				modDate = q.executeQuery(quer, commit=True)[1]
 				if modDate is not None:
-					Query().saveDate(modDate)
+					q.saveDate(modDate)
 				return redirect(url_for('geneview', iD=iD), code=302)
 			except dictError as e:
 				mess = e["errors"]
@@ -174,7 +173,7 @@ def trans():
 	"""
 	with app.app_context():
 		queryTrans = 'SELECT Ensembl_Transcript_ID, Transcript_Biotype, Ensembl_Gene_ID FROM Transcripts;'
-		cursor = Query().executeQuery(queryTrans)[0]
+		cursor = q.executeQuery(queryTrans)[0]
 		trans = cursor.fetchall()
 		subtrans=trans[1:1000]
 		return render_template("trans.html", trans=subtrans, title="Transcrits")
@@ -187,7 +186,7 @@ def transview(iD):
 	"""
 	with app.app_context():
 		queryTran = ("SELECT * FROM Transcripts WHERE Ensembl_Transcript_ID = '%s';" % (iD,))
-		cursor = Query().executeQuery(queryTran)[0]
+		cursor = q.executeQuery(queryTran)[0]
 		infos = cursor.fetchall()[0]
 		tnames = [description[0] for description in cursor.description]
 		return render_template("transview.html", iD=iD, tnames=tnames, infos=infos, title="Transcrits")
@@ -206,14 +205,14 @@ def apiGenesGet():
 	"""
 	with app.app_context():
 		offset = request.args.get('offset', default = 0, type = int)
-		etag = Query().getEtag()
+		etag = q.getEtag()
 		if etag in request.if_none_match:#If ETag is already in cache, do not query again
 			status=304
 			resp = make_response(jsonify(""), status)
 			resp.set_etag(etag) #This is the ETag to use
 			return (resp)
-		queryAll = Query().queryAllTable()["query"]
-		cursor = Query().executeQuery(queryAll)[0]
+		queryAll = q.queryAllTable()["query"]
+		cursor = q.executeQuery(queryAll)[0]
 		genes = cursor.fetchall()
 		cols = [desc[0] for desc in cursor.description]
 		res = []
@@ -267,7 +266,7 @@ def apiPostGenes():
 		req = request.json
 		if not isinstance(req, list):
 			status=418
-			mess=Query().error(title="Vous ne passerez pas !", detail="Le fichier JSON est mal formaté",
+			mess=q.error(title="Vous ne passerez pas !", detail="Le fichier JSON est mal formaté",
 				status=status, source={"api" : "Insertion de gènes"})
 			return jsonify({"errors" : mess}), status
 		res ={}
@@ -277,11 +276,11 @@ def apiPostGenes():
 		for gene in req:
 			if not isinstance(gene, dict):
 				status=418
-				mess=Query().error(title="Vous ne passerez pas !", detail="Le fichier JSON est mal formaté",
+				mess=q.error(title="Vous ne passerez pas !", detail="Le fichier JSON est mal formaté",
 				status=status, source={"api" : "Insertion de gènes"})
 				return jsonify({"errors" : mess}), status
 			try:
-				quer = Query().queryIns(gene)
+				quer = q.queryIns(gene)
 				iDs.append(gene["Ensembl_Gene_ID"])
 				quers.append(quer["query"])
 			except dictError as e:
@@ -292,14 +291,14 @@ def apiPostGenes():
 			assert len(set(iDs))==len(iDs)
 		except AssertionError as e:
 			status=403
-			mess=Query().error(detail="Certains gènes sont en plusieurs copies", status=status, 
+			mess=q.error(detail="Certains gènes sont en plusieurs copies", status=status, 
 				source={"api" : "Insertion de gènes"})
 			return jsonify({"errors" : mess}), status
 		for index, que in enumerate(quers):
-			modDate = Query().executeQuery(que, commit=True)[1]
+			modDate = q.executeQuery(que, commit=True)[1]
 			res["created"].append(url_for('apiGenesViewiD', iD=req[index]['Ensembl_Gene_ID'], _external=True))
 		if modDate is not None:
-			Query().saveDate(modDate)
+			q.saveDate(modDate)
 		return jsonify(res), 200
 
 
@@ -310,14 +309,14 @@ def apiGenesViewiD(iD):
 	"""
 	with app.app_context():
 		try:
-			res = Query().viewGene(iD)
+			res = q.viewGene(iD)
 			view = res['gene']
 			view['transcripts'] = res['trans']
 			status = 200
 		except dictError as e:
 			view = e["errors"]
 			status = e["status"]
-		etag = Query().getEtag()
+		etag = q.getEtag()
 		if etag in request.if_none_match:#If ETag is already in cache, do not query again
 			status=304
 			resp = make_response(jsonify(""), status)
@@ -334,11 +333,11 @@ def apiGenesDeleteiD(iD):
 	"""
 	with app.app_context():
 		try:
-			checkQuery = Query().queryDel(iD)
+			checkQuery = q.queryDel(iD)
 			quer = checkQuery["query"]
-			modDate = Query().executeQuery(quer, commit = True)[1]
+			modDate = q.executeQuery(quer, commit = True)[1]
 			if modDate is not None:
-				Query().saveDate(modDate)
+				q.saveDate(modDate)
 			return jsonify({ "deleted": iD })
 		except dictError as e:
 			mess=e["errors"]
@@ -358,44 +357,44 @@ def apiGenesPutiD(iD):
 		req=request.json
 		if not isinstance(req, dict):
 			status=418
-			mess=Query().error(title="Vous ne passerez pas !", detail="Le fichier JSON est mal formaté", status=status, 
+			mess=q.error(title="Vous ne passerez pas !", detail="Le fichier JSON est mal formaté", status=status, 
 				source={"api" : "Insertion ou modification d'un gène"})
 			return jsonify({"errors" : [mess]}), status
 		if req["Ensembl_Gene_ID"]!=iD:
 			status=403
-			err=Query().error(detail="Les gènes %s et %s ne correspondent pas" % (req["Ensembl_Gene_ID"], iD), 
+			err=q.error(detail="Les gènes %s et %s ne correspondent pas" % (req["Ensembl_Gene_ID"], iD), 
 				status=status, source={"api" : "Insertion ou modification d'un gène"})			
 			return jsonify(err), status
 		try:
-			checkQueryEdit=Query().queryEdit(req, iD)
-			checkQueryIns=Query().queryIns(req)
+			checkQueryEdit=q.queryEdit(req, iD)
+			checkQueryIns=q.queryIns(req)
 			return jsonify(error)
 		except:
 			pass
 		try:
-			checkQueryEdit=Query().queryEdit(req, iD)
-			etag=Query().getEtag() #This is the current ETag that any client have to possess when querying
+			checkQueryEdit=q.queryEdit(req, iD)
+			etag=q.getEtag() #This is the current ETag that any client have to possess when querying
 			if etag not in request.if_match:#If ETag not in this list, do not edit the gene
 				status=412
 				#Client must get the ETag in a proper way to be able to query
 				resp = make_response(jsonify(""), status)
 				return resp
 			quer = checkQueryEdit["query"]
-			modDate = Query().executeQuery(quer, commit = True)[1]
+			modDate = q.executeQuery(quer, commit = True)[1]
 			if modDate is not None:
-				Query().saveDate(modDate)
+				q.saveDate(modDate)
 			resp = make_response(jsonify({"edited": url_for('apiGenesViewiD', iD=req['Ensembl_Gene_ID'], _external=True)}), 200)
-			etag=Query().getEtag() #This is the updated ETag that any client have to obtain before querying
+			etag=q.getEtag() #This is the updated ETag that any client have to obtain before querying
 			resp.set_etag(etag)
 			return resp
 		except dictError as e:
 			editErr=e["errors"]
 		try:
-			checkQueryIns=Query().queryIns(req)
+			checkQueryIns=q.queryIns(req)
 			quer = checkQueryIns["query"]
-			modDate = Query().executeQuery(quer, commit = True)[1]
+			modDate = q.executeQuery(quer, commit = True)[1]
 			if modDate is not None:
-				Query().saveDate(modDate)
+				q.saveDate(modDate)
 			return jsonify({"created": url_for('apiGenesViewiD', iD=req['Ensembl_Gene_ID'], _external=True)})
 		except dictError as e:
 			insErr=e["errors"]

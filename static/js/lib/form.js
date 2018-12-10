@@ -1,11 +1,9 @@
 
-
 function oblgAtt(att) {
-	var state=true
+	let state=true
 	for (let i = 0; i < att.length; i++) {
-		console.log(att[i].value);
 		if (att[i].value==="") {
-			att[i].style.backgroundColor = "orange";
+			att[i].style.backgroundColor = "MistyRose";
 			state=false
 		}else{
 			att[i].style.backgroundColor = "";
@@ -16,14 +14,14 @@ function oblgAtt(att) {
 
 function diffLen(att, val) {
  	if (att.value.length > val) {
- 		att.style.backgroundColor = "yellow";
+ 		att.style.backgroundColor = "LightCoral";
 		return false
 	};
  }
 
 function diffNum(start, end) {
 	if (parseInt(start.value, 10)>=parseInt(end.value, 10)) {
-		start.style.backgroundColor = "yellow";
+		start.style.backgroundColor = "LightCoral";
 		return false
 	}else{
 		start.style.backgroundColor = "";
@@ -45,7 +43,7 @@ function checkVals(objs){
 		return false
 	};
 	let lenVer=[[gid, 15],[end, 11]]
-	for (var o of lenVer) {
+	for (let o of lenVer) {
 		if (diffLen(o[0], o[1])===false){
 			return false
 		};
@@ -53,12 +51,7 @@ function checkVals(objs){
 
 	if (diffNum(start, end)===false) {
 		return false
-	}  
-
-
-	for (let i = 0; i < 5 ; i++) {
-		console.log(objs[i].value)
-	};
+	}
 
 	return true
 };
@@ -74,5 +67,15 @@ function listenBoxes() {
 	};
 };
 
-
-
+$(document).ready(function(){
+	let e = document.getElementsByClassName('popdown');
+	for (let pop of e){
+		let f = pop.querySelectorAll("*")[0]
+		pop.onmouseover = function() {
+			f.style.display = 'block';
+		}
+		pop.onmouseout = function() {
+			f.style.display = 'none';
+		}
+	}
+});

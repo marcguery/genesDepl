@@ -2,3 +2,17 @@ input#gid, input#assName, input#start, input#end {
     border: 2px solid lightblue;
     border-radius: 4px;
 }
+
+
+
+.popdown .popup {
+  display: none;
+  float:right;
+  text-align: center;
+  margin-left: 10px;
+  color:LightSlateGrey;
+}
+
+.popdown:hover .popup {
+  display: block;
+}

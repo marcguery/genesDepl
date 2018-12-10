@@ -21,39 +21,55 @@
   {% endif %}
     <div class="form-row">
        <div class="form-group col-md-6">
-         <label for="gid">{{cols[0]}}</label>
+         <label for="gid"><div class="popdown">{{cols[0]}}
+            <div class="popup" name="gname" style="display: none">Texte/Nombre (moins de 15 caractères)</div>
+          </div></label>
          {% if action == "edit" %}
-          <input type="text" class="form-control" id="gid" name={{cols[0]}} value={{default[0]}} disabled>
+          <input type="text" class="form-control" id="gid" name={{cols[0]}} disabled="" value={{default[0]}}>
          {% else %}
           <input type="text" class="form-control" id="gid" name={{cols[0]}} onchange="listenBoxes();" value={{default[0]}}>
          {% endif %}
        </div>
        <div class="form-group col-md-6">
-         <label for="assName">{{cols[1]}}</label>
+         <label for="assName">
+          <div class="popdown">{{cols[1]}}
+            <div class="popup" name="assname" style="display: none">Texte/Nombre</div>
+          </div>
+        </label>
          <input type="text" class="form-control" id="assName" name={{cols[1]}} onchange="listenBoxes();" value={{default[1]}}>
        </div>
      </div>
      <div class="form-row">
        <div class="form-group col-md-6">
-         <label for="chr">{{cols[2]}}</label>
+         <label for="chr"><div class="popdown">{{cols[2]}}
+            <div class="popup" style="display: none">Texte/Nombre</div>
+          </div></label>
          <input type="text" class="form-control" id="chr" name={{cols[2]}} onchange="listenBoxes();" value={{default[2]}}>
        </div>
        <div class="form-group col-md-3">
-           <label for="band">{{cols[3]}}</label>
+           <label for="band"><div class="popdown">{{cols[3]}}
+            <div class="popup" style="display: none">Texte/Nombre</div>
+          </div></label>
            <input type="text" class="form-control" id="band" name={{cols[3]}} onchange="listenBoxes();" value={{default[3]}}>
        </div>
        <div class="form-group col-md-3">
-         <label for="strand">{{cols[4]}}</label>
+         <label for="strand"><div class="popdown">{{cols[4]}}
+            <div class="popup" style="display: none">Texte/Nombre</div>
+          </div></label>
          <input type="number" class="form-control" id="strand" name={{cols[4]}} onchange="listenBoxes();" value={{default[4]}}>
        </div>
      </div>
      <div class="form-row">
        <div class="form-group col-md-6">
-         <label for="start">{{cols[5]}}</label>
+         <label for="start"><div class="popdown">{{cols[5]}}
+            <div class="popup" style="display: none">Nombre (inférieur au suivant)</div>
+          </div></label>
          <input type="number" class="form-control" id="start" name={{cols[5]}} onchange="listenBoxes();" value={{default[5]}}>
        </div>
        <div class="form-group col-md-6">
-         <label for="end">{{cols[6]}}</label>
+         <label for="end"><div class="popdown">{{cols[6]}}
+            <div class="popup" style="display: none">Nombre (moins de 11 chiffres)</div>
+          </div></label>
          <input type="number" class="form-control" id="end" name={{cols[6]}} onchange="listenBoxes();" value={{default[6]}}>
        </div>
      </div>

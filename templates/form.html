@@ -1,8 +1,9 @@
-{% extends "genes.html" %}
+{% extends "base.html" %}
 {% block back %}
     <h4><a href=" {{ url_for('genes') }}">Revenir à la liste de gènes</a></h4>
 {% endblock %}
 {% block scripts %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/sure.js') }}"></script>
 <script src="{{ url_for('static', filename='js/lib/form.js') }}" defer></script>
 <link rel="stylesheet" type="text/css" href="{{url_for('static', filename ='css/lib/form.css')}}">
 {% endblock %}
@@ -27,7 +28,7 @@
          {% if action == "edit" %}
           <input type="text" class="form-control" id="gid" name={{cols[0]}} disabled="" value={{default[0]}}>
          {% else %}
-          <input type="text" class="form-control" id="gid" name={{cols[0]}} onchange="listenBoxes();" value={{default[0]}}>
+          <input type="text" class="form-control" id="gid" name={{cols[0]}} onclick="deactivateBtn('btn');" onfocusout="checkId(this, this.value);" value={{default[0]}}>
          {% endif %}
        </div>
        <div class="form-group col-md-6">
@@ -36,7 +37,7 @@
             <div class="popup" name="assname" style="display: none">Texte/Nombre</div>
           </div>
         </label>
-         <input type="text" class="form-control" id="assName" name={{cols[1]}} onchange="listenBoxes();" value={{default[1]}}>
+         <input type="text" class="form-control" id="assName" name={{cols[1]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[1]}}>
        </div>
      </div>
      <div class="form-row">
@@ -44,19 +45,19 @@
          <label for="chr"><div class="popdown">{{cols[2]}}
             <div class="popup" style="display: none">Texte/Nombre</div>
           </div></label>
-         <input type="text" class="form-control" id="chr" name={{cols[2]}} onchange="listenBoxes();" value={{default[2]}}>
+         <input type="text" class="form-control" id="chr" name={{cols[2]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[2]}}>
        </div>
        <div class="form-group col-md-3">
            <label for="band"><div class="popdown">{{cols[3]}}
             <div class="popup" style="display: none">Texte/Nombre</div>
           </div></label>
-           <input type="text" class="form-control" id="band" name={{cols[3]}} onchange="listenBoxes();" value={{default[3]}}>
+           <input type="text" class="form-control" id="band" name={{cols[3]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[3]}}>
        </div>
        <div class="form-group col-md-3">
          <label for="strand"><div class="popdown">{{cols[4]}}
             <div class="popup" style="display: none">Texte/Nombre</div>
           </div></label>
-         <input type="number" class="form-control" id="strand" name={{cols[4]}} onchange="listenBoxes();" value={{default[4]}}>
+         <input type="number" class="form-control" id="strand" name={{cols[4]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[4]}}>
        </div>
      </div>
      <div class="form-row">
@@ -64,15 +65,15 @@
          <label for="start"><div class="popdown">{{cols[5]}}
             <div class="popup" style="display: none">Nombre (inférieur au suivant)</div>
           </div></label>
-         <input type="number" class="form-control" id="start" name={{cols[5]}} onchange="listenBoxes();" value={{default[5]}}>
+         <input type="number" class="form-control" id="start" name={{cols[5]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[5]}}>
        </div>
        <div class="form-group col-md-6">
          <label for="end"><div class="popdown">{{cols[6]}}
             <div class="popup" style="display: none">Nombre (moins de 11 chiffres)</div>
           </div></label>
-         <input type="number" class="form-control" id="end" name={{cols[6]}} onchange="listenBoxes();" value={{default[6]}}>
+         <input type="number" class="form-control" id="end" name={{cols[6]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[6]}}>
        </div>
      </div>
-    <input type="button" onClick="confSubmit(this.form);" value="Envoyer" disabled />
+    <input type="button" id="btn" onClick="confSubmit(this.form);" value="Envoyer"  disabled />
   </form>
 {% endblock %}

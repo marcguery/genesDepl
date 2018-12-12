@@ -1,8 +1,7 @@
-input#gid, input#assName, input#start, input#end {
+input#gid, input#assName, input#chr, input#start, input#end {
     border: 2px solid lightblue;
     border-radius: 4px;
 }
-
 
 
 .popdown .popup {

@@ -9,7 +9,7 @@ function colError(att){
 }
 
 function colBadError(att){
-	att.style.backgroundColor = "LightCoral"
+	att.style.backgroundColor = "Crimson"
 }
 
 function colGood(att){
@@ -91,11 +91,10 @@ function checkVals(objs){
 };
 
 function uniq(iD){
-	let src = document.getElementById("gid");
-	src.style.background = 'url(https://i.stack.imgur.com/qq8AE.gif) right no-repeat';
 	let main = 'http://127.0.0.1:5000/api/Genes/';
 	let url = main.concat(iD);
 	let gid = document.getElementById('gid');
+	gid.style.backgroundImage='url(https://i.stack.imgur.com/qq8AE.gif)'
 	let req = {method: 'HEAD'};
 	fetch(url, req).then((response) => {
 		// cette fonction est appelée lorsque
@@ -115,7 +114,7 @@ function uniq(iD){
 		valid(gid);
 		colGood(gid);
 	}).finally(() => {
-		src.style.backgroundImage = '';
+		gid.style.backgroundImage='none';
 	});
 }
 
@@ -148,7 +147,6 @@ function checkId(att, iD) {
 
 function deactivateBtn(btId){
 	let btn = document.getElementById(btId);
-	btn.setCustomValidity("Modifiez le formulaire pour activer le bouton")
 	btn.disabled=true;
 }
 

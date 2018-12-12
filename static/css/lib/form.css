@@ -1,6 +1,12 @@
 input#gid, input#assName, input#chr, input#start, input#end {
-    border: 2px solid lightblue;
+    border: 2px solid DarkCyan;
     border-radius: 4px;
+}
+
+input#gid{
+background-repeat:no-repeat;
+background-position:right;
+background-size: contain;
 }
 
 

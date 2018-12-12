@@ -1,79 +1,99 @@
 {% extends "base.html" %}
 {% block back %}
-    <h4><a href=" {{ url_for('genes') }}">Revenir à la liste de gènes</a></h4>
+  <h4><a href=" {{ url_for('genes') }}">Revenir à la liste de gènes</a></h4>
 {% endblock %}
 {% block scripts %}
-<script type="text/javascript" src="{{ url_for('static', filename='js/lib/sure.js') }}"></script>
-<script src="{{ url_for('static', filename='js/lib/form.js') }}" defer></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/sure.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/lib/formCheck.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/lib/creaDit.js') }}" defer></script>
 <link rel="stylesheet" type="text/css" href="{{url_for('static', filename ='css/lib/form.css')}}">
 {% endblock %}
 {% block main %}
   {% if action == "edit" %}
-    <h1>Formulaire de modification du gène {{default[0]}} </h1>
+  <h1>Formulaire de modification du gène {{default[0]}} </h1>
   {% else %}
-    <h1>Formulaire de saisie d'un nouveau gène</h1>
+  <h1>Formulaire de saisie d'un nouveau gène</h1>
   {% endif %}
 {% endblock %}
 {% block content %}
-  {% if action == "edit" %}
-    <form action="{{ url_for('geneedit', iD=default[0]) }}" method="post">
-  {% else %}
-    <form action="{{ url_for('genenew') }}" method="post">
-  {% endif %}
-    <div class="form-row">
-       <div class="form-group col-md-6">
-         <label for="gid"><div class="popdown">{{cols[0]}}
-            <div class="popup" name="gname" style="display: none">Texte/Nombre (moins de 15 caractères)</div>
-          </div></label>
-         {% if action == "edit" %}
-          <input type="text" class="form-control" id="gid" name={{cols[0]}} disabled="" value={{default[0]}}>
-         {% else %}
-          <input type="text" class="form-control" id="gid" name={{cols[0]}} onclick="deactivateBtn('btn');" onfocusout="checkId(this, this.value);" value={{default[0]}}>
-         {% endif %}
-       </div>
-       <div class="form-group col-md-6">
-         <label for="assName">
-          <div class="popdown">{{cols[1]}}
-            <div class="popup" name="assname" style="display: none">Texte/Nombre</div>
+<form>
+  <div class="form-row">
+    <div class="form-group col-md-6">
+      <label for="gid">
+        <div class="popdown">{{cols[0]}}
+          <div class="popup" name="gname" style="display: none">Texte/Nombre (moins de 15 caractères)
           </div>
-        </label>
-         <input type="text" class="form-control" id="assName" name={{cols[1]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[1]}}>
-       </div>
-     </div>
-     <div class="form-row">
-       <div class="form-group col-md-6">
-         <label for="chr"><div class="popdown">{{cols[2]}}
-            <div class="popup" style="display: none">Texte/Nombre</div>
-          </div></label>
-         <input type="text" class="form-control" id="chr" name={{cols[2]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[2]}}>
-       </div>
-       <div class="form-group col-md-3">
-           <label for="band"><div class="popdown">{{cols[3]}}
-            <div class="popup" style="display: none">Texte/Nombre</div>
-          </div></label>
-           <input type="text" class="form-control" id="band" name={{cols[3]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[3]}}>
-       </div>
-       <div class="form-group col-md-3">
-         <label for="strand"><div class="popdown">{{cols[4]}}
-            <div class="popup" style="display: none">Texte/Nombre</div>
-          </div></label>
-         <input type="number" class="form-control" id="strand" name={{cols[4]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[4]}}>
-       </div>
-     </div>
-     <div class="form-row">
-       <div class="form-group col-md-6">
-         <label for="start"><div class="popdown">{{cols[5]}}
-            <div class="popup" style="display: none">Nombre (inférieur au suivant)</div>
-          </div></label>
-         <input type="number" class="form-control" id="start" name={{cols[5]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[5]}}>
-       </div>
-       <div class="form-group col-md-6">
-         <label for="end"><div class="popdown">{{cols[6]}}
-            <div class="popup" style="display: none">Nombre (moins de 11 chiffres)</div>
-          </div></label>
-         <input type="number" class="form-control" id="end" name={{cols[6]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[6]}}>
-       </div>
-     </div>
-    <input type="button" id="btn" onClick="confSubmit(this.form);" value="Envoyer"  disabled />
-  </form>
+        </div>
+      </label>
+      {% if action == "edit" %}
+        <input type="text" class="form-control" id="gid" name={{cols[0]}} disabled="" value={{default[0]}}>
+      {% else %}
+        <input type="text" class="form-control" id="gid" name={{cols[0]}} onclick="deactivateBtn('btn');" onfocusout="checkId(this, this.value);" value={{default[0]}}>
+      {% endif %}
+    </div>
+    <div class="form-group col-md-6">
+      <label for="assName">
+        <div class="popdown">{{cols[1]}}
+          <div class="popup" name="assname" style="display: none">Texte/Nombre
+          </div>
+        </div>
+      </label>
+      <input type="text" class="form-control" id="assName" name={{cols[1]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[1]}}>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group col-md-6">
+      <label for="chr">
+        <div class="popdown">{{cols[2]}}
+          <div class="popup" style="display: none">Texte/Nombre
+          </div>
+        </div>
+      </label>
+      <input type="text" class="form-control" id="chr" name={{cols[2]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[2]}}>
+    </div>
+    <div class="form-group col-md-3">
+      <label for="band">
+        <div class="popdown">{{cols[3]}}
+          <div class="popup" style="display: none">Texte/Nombre
+          </div>
+        </div>
+      </label>
+      <input type="text" class="form-control" id="band" name={{cols[3]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[3]}}>
+    </div>
+    <div class="form-group col-md-3">
+      <label for="strand">
+        <div class="popdown">{{cols[4]}}
+          <div class="popup" style="display: none">Texte/Nombre
+          </div>
+        </div>
+      </label>
+      <input type="number" class="form-control" id="strand" name={{cols[4]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[4]}}>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group col-md-6">
+      <label for="start">
+        <div class="popdown">{{cols[5]}}
+          <div class="popup" style="display: none">Nombre (inférieur au suivant)
+          </div>
+        </div>
+      </label>
+      <input type="number" class="form-control" id="start" name={{cols[5]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[5]}}>
+    </div>
+    <div class="form-group col-md-6">
+      <label for="end">
+        <div class="popdown">{{cols[6]}}
+          <div class="popup" style="display: none">Nombre (moins de 11 chiffres)
+          </div>
+        </div>
+      </label>
+      <input type="number" class="form-control" id="end" name={{cols[6]}} onclick="deactivateBtn('btn');" onfocusout="listenBoxes();" value={{default[6]}}>
+    </div>
+  </div>
+  {% if action=="edit" %}
+    <input type="button" id="btn" onclick="editGene(this.form);" value="Envoyer"  disabled />
+  {% else %}
+    <input type="button" id="btn" onclick="createGene(this.form);" value="Envoyer"  disabled />
+  {% endif %}
+</form>
 {% endblock %}

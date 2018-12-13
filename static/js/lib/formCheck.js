@@ -66,17 +66,18 @@ function diffNum(start, end) {
 
 
 function checkVals(objs){
+	let gid = objs[0];
 	let assName = objs[1];
 	let chr = objs[2];
 	let band = objs[3];
 	let strand = objs[4];
 	let start = objs[5];
 	let end = objs[6];
-	let oblg = [assName, chr, start, end];
+	let oblg = [gid, assName, chr, start, end];
 	if (oblgAtt(oblg)===false) {
 		return false
 	};
-	let lenVer=[[end, 11]]
+	let lenVer=[[gid, 15], [end, 11]]
 	for (let o of lenVer) {
 		if (diffLen(o[0], o[1])===false){
 			return false
@@ -96,7 +97,7 @@ function uniq(iD){
 	let gid = document.getElementById('gid');
 	gid.style.backgroundImage='url(https://i.stack.imgur.com/qq8AE.gif)'
 	let req = {method: 'HEAD'};
-	fetch(url, req).then((response) => {
+	return fetch(url, req).then((response) => {
 		// cette fonction est appelée lorsque
 		// les en-têtes de la réponse ont été reçu
 		if (!response.ok) {
@@ -109,46 +110,42 @@ function uniq(iD){
 		// et analysé comme du JSON
 		invalid(gid, "Le gène existe déjà");
 		colBadError(gid);
+		return false
 	}).catch((err) => {
 		// cette fonction est appelée en cas d'erreur
 		valid(gid);
 		colGood(gid);
+		return true
 	}).finally(() => {
 		gid.style.backgroundImage='none';
 	});
 }
 
+function deactivateBtn(btId, state){
+	let btn = document.getElementById(btId);
+	btn.disabled=state;
+};
+
 
 function listenBoxes() {
-	let btn = document.getElementById('btn');
 	let textBoxes = document.getElementsByClassName('form-control');
 	let state = checkVals(textBoxes);
-	btn.disabled=!state;
 	if (state) {
-		console.log("CHECK")
-		
+		console.log("CHECK");
+		let gid = textBoxes[0];
+		uniq(gid.value).then(resp => {
+			if (resp) {
+				deactivateBtn('btn', false);
+			}else{
+				deactivateBtn('btn', true);
+			}
+		})		
 	}else {
+		deactivateBtn('btn', true);
 		console.log("NONENCOR")
 	};
 	return state
 };
-
-
-function checkId(att, iD) {
-	if (oblgAtt([att])===false) {
-		return false
-	};
-	if (diffLen(att, 15)===false){
-			return false
-		};
-	uniq(iD);
-	return true
-};
-
-function deactivateBtn(btId){
-	let btn = document.getElementById(btId);
-	btn.disabled=true;
-}
 
 $(document).ready(function(){
 	let e = document.getElementsByClassName('popdown');
